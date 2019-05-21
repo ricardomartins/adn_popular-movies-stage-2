@@ -11,6 +11,12 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
+        debug {
+            // Api declared in the gradle.properties file as described in
+            // https://medium.com/code-better/hiding-api-keys-from-your-android-repository-b23f5598b906
+            // under the name TheMovieDb_v3auth_ApiKey
+            buildConfigField 'String', "TheMovieDbApiKey", TheMovieDb_v3auth_ApiKey
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
