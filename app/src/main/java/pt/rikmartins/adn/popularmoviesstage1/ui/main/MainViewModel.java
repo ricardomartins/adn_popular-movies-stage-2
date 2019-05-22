@@ -18,24 +18,24 @@ public class MainViewModel extends AndroidViewModel {
 
     @Inject Repository repository;
 
-    private LiveData<List<MovieListItem>> movieListLiveData;
-
     public MainViewModel(@NonNull Application application) {
         super(application);
         ((AppComponent.ComponentProvider) getApplication()).getComponent().inject(this);
-
-        movieListLiveData = repository.getMovieListLiveData();
     }
 
-    public LiveData<List<MovieListItem>> getMovieListLiveData() {
-        return movieListLiveData;
+    LiveData<List<MovieListItem>> getMovieListLiveData() {
+        return repository.getMovieListLiveData();
     }
 
-    public void requestMoreData() {
+    LiveData<Boolean> getWorkStatusLiveData() {
+        return repository.getWorkStatusLiveData();
+    }
+
+    void requestMoreData() {
         repository.requestMoreData();
     }
 
-    public void switchMode(int mode) {
+    void switchMode(int mode) {
         repository.switchMode(mode);
     }
 }
