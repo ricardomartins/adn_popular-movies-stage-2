@@ -8,6 +8,11 @@ import androidx.lifecycle.MutableLiveData;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+
+import dagger.Reusable;
+import pt.rikmartins.adn.popularmoviesstage1.api.ApiModule;
 import pt.rikmartins.adn.popularmoviesstage1.api.TheMovieDb3Service;
 import pt.rikmartins.adn.popularmoviesstage1.api.model.MovieListItem;
 import pt.rikmartins.adn.popularmoviesstage1.api.model.MoviePage;
@@ -16,6 +21,7 @@ import retrofit2.Callback;
 import retrofit2.Response;
 import retrofit2.internal.EverythingIsNonNull;
 
+@Reusable
 public class Repository {
     private static final String TAG = Repository.class.getSimpleName();
 
@@ -37,7 +43,8 @@ public class Repository {
 
     private final MutableLiveData<List<MovieListItem>> movieListLiveData;
 
-    public Repository(TheMovieDb3Service theMovieDb3Service, int startPage) {
+    @Inject
+    public Repository(TheMovieDb3Service theMovieDb3Service, @Named(ApiModule.THE_MOVIE_DB_API_START_PAGE_NAME) int startPage) {
         this.theMovieDb3Service = theMovieDb3Service;
         this.startPage = startPage;
         movieListLiveData = new MutableLiveData<>();

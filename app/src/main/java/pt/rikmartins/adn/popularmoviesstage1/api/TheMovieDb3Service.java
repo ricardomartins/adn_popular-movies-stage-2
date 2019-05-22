@@ -1,5 +1,8 @@
 package pt.rikmartins.adn.popularmoviesstage1.api;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+
 import pt.rikmartins.adn.popularmoviesstage1.api.model.MoviePage;
 import retrofit2.Call;
 
@@ -8,7 +11,8 @@ public class TheMovieDb3Service {
     private final TheMovieDatabaseApi3 theMovieDatabaseApi3;
     private final String theMovieDbApiV3Key;
 
-    public TheMovieDb3Service(TheMovieDatabaseApi3 theMovieDatabaseApi3, String theMovieDbApiV3Key) {
+    @Inject
+    public TheMovieDb3Service(TheMovieDatabaseApi3 theMovieDatabaseApi3, @Named(ApiModule.THE_MOVIE_DB_API_KEY_NAME) String theMovieDbApiV3Key) {
         this.theMovieDatabaseApi3 = theMovieDatabaseApi3;
         this.theMovieDbApiV3Key = theMovieDbApiV3Key;
     }

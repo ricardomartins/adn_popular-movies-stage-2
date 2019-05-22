@@ -2,17 +2,17 @@ package pt.rikmartins.adn.popularmoviesstage1;
 
 import android.app.Application;
 
-public class PmApplication extends Application implements Component.ComponentProvider {
-    private Component component;
+public class PmApplication extends Application implements AppComponent.ComponentProvider {
+    private AppComponent component;
 
     @Override
     public void onCreate() {
         super.onCreate();
-        component = new Component();
+        component = DaggerAppComponent.builder().build();
     }
 
     @Override
-    public Component getComponent() {
+    public AppComponent getComponent() {
         return component;
     }
 

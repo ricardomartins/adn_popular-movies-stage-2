@@ -8,17 +8,21 @@ import androidx.lifecycle.LiveData;
 
 import java.util.List;
 
-import pt.rikmartins.adn.popularmoviesstage1.Component;
+import javax.inject.Inject;
+
+import pt.rikmartins.adn.popularmoviesstage1.AppComponent;
 import pt.rikmartins.adn.popularmoviesstage1.api.model.MovieListItem;
 import pt.rikmartins.adn.popularmoviesstage1.data.Repository;
 
 public class MainViewModel extends AndroidViewModel {
-    private Repository repository;
+
+    @Inject Repository repository;
+
     private LiveData<List<MovieListItem>> movieListLiveData;
 
     public MainViewModel(@NonNull Application application) {
         super(application);
-        inject();
+        ((AppComponent.ComponentProvider) getApplication()).getComponent().inject(this);
 
         movieListLiveData = repository.getMovieListLiveData();
     }
@@ -31,8 +35,7 @@ public class MainViewModel extends AndroidViewModel {
         repository.requestMoreData();
     }
 
-    private void inject() {
-        Component component = ((Component.ComponentProvider) getApplication()).getComponent();
-        repository = component.repository();
+    public void switchMode(int mode) {
+        repository.switchMode(mode);
     }
 }

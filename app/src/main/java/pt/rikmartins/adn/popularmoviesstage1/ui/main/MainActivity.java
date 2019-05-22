@@ -13,23 +13,28 @@ import com.google.gson.Gson;
 
 import java.util.List;
 
-import pt.rikmartins.adn.popularmoviesstage1.Component;
+import javax.inject.Inject;
+
+import pt.rikmartins.adn.popularmoviesstage1.AppComponent;
 import pt.rikmartins.adn.popularmoviesstage1.R;
 import pt.rikmartins.adn.popularmoviesstage1.api.model.MovieListItem;
 
 public class MainActivity extends AppCompatActivity {
 
-    private MainViewModel viewModel;
-
     private TextView tv;
 
-    private Gson gson;
+    private MainViewModel viewModel; // TODO: Find a way to inject this through Dagger as well
+                                     // https://medium.com/chili-labs/android-viewmodel-injection-with-dagger-f0061d3402ff
+                                     // is a very complex example, but may be the only way or in the
+                                     // very least contain clues to a simpler/better solution
+
+    @Inject Gson gson;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        inject();
+        ((AppComponent.ComponentProvider) getApplication()).getComponent().inject(this);
 
         tv = findViewById(R.id.tv_output);
 
@@ -52,10 +57,5 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         return true;
-    }
-
-    private void inject() {
-        Component component = ((Component.ComponentProvider) getApplication()).getComponent();
-        gson = component.gson();
     }
 }
