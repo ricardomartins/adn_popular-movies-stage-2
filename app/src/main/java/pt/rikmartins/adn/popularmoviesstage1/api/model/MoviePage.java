@@ -17,4 +17,20 @@ public class MoviePage {
 
     @SerializedName("total_pages")
     private Integer totalPages;
+
+    public Integer getPage() {
+        return page;
+    }
+
+    public List<MovieListItem> getResults() {
+        return results;
+    }
+
+    public Integer getTotalResults() {
+        return totalResults;
+    }
+
+    public Integer getTotalPages() {
+        return totalPages;
+    }
 }

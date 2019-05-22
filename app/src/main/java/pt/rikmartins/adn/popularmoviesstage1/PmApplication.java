@@ -2,7 +2,7 @@ package pt.rikmartins.adn.popularmoviesstage1;
 
 import android.app.Application;
 
-public class PmApplication extends Application implements Component.ComponentHolder {
+public class PmApplication extends Application implements Component.ComponentProvider {
     private Component component;
 
     @Override
