@@ -8,7 +8,7 @@ public class PmApplication extends Application implements AppComponent.Component
     @Override
     public void onCreate() {
         super.onCreate();
-        component = DaggerAppComponent.builder().build();
+        component = DaggerAppComponent.create();
     }
 
     @Override
