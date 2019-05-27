@@ -6,8 +6,6 @@ import java.util.List;
 
 public class MoviePage {
 
-    public MoviePage() {}
-
     private Integer page;
 
     private List<MovieListItem> results;

@@ -6,23 +6,6 @@ import java.util.List;
 
 public class MovieListItem { // referred to in the API docs as {Movie List Result Object}
 
-    public MovieListItem(String posterPath, Boolean adult, String overview, String releaseDate, List<Integer> genreIds, Integer id, String originalTitle, String originalLanguage, String title, String backdropPath, Float popularity, Integer voteCount, Boolean video, Float voteAverage) {
-        this.posterPath = posterPath;
-        this.adult = adult;
-        this.overview = overview;
-        this.releaseDate = releaseDate;
-        this.genreIds = genreIds;
-        this.id = id;
-        this.originalTitle = originalTitle;
-        this.originalLanguage = originalLanguage;
-        this.title = title;
-        this.backdropPath = backdropPath;
-        this.popularity = popularity;
-        this.voteCount = voteCount;
-        this.video = video;
-        this.voteAverage = voteAverage;
-    }
-
     @SerializedName("poster_path")
     private String posterPath; // can be null
 

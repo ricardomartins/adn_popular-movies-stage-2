@@ -38,4 +38,8 @@ public class MainViewModel extends AndroidViewModel {
     void switchMode(int mode) {
         repository.switchMode(mode);
     }
+
+    void updateConfiguration() {
+        repository.updateConfiguration();
+    }
 }

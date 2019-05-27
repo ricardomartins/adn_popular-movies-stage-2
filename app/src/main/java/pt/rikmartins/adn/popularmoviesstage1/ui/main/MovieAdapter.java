@@ -1,12 +1,16 @@
 package pt.rikmartins.adn.popularmoviesstage1.ui.main;
 
+import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.squareup.picasso.Picasso;
 
 import java.util.List;
 
@@ -17,6 +21,8 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MoviePosterV
 
     private final MovieAdapterOnClickHandler clickHandler;
     private List<MovieListItem> movieListItems;
+
+    private Uri imagesUrl;
 
     public MovieAdapter(MovieAdapterOnClickHandler clickHandler) {
         this.clickHandler = clickHandler;
@@ -32,7 +38,12 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MoviePosterV
 
     @Override
     public void onBindViewHolder(@NonNull MoviePosterViewHolder holder, int position) {
-        holder.itemText.setText(movieListItems.get(position).getTitle());
+        MovieListItem movieListItem = movieListItems.get(position);
+        holder.itemText.setText(movieListItem.getTitle());
+        if (imagesUrl != null)
+            Picasso.get()
+                    .load(imagesUrl.buildUpon().appendEncodedPath(movieListItem.getPosterPath()).build())
+                    .into(holder.posterImage);
     }
 
     @Override
@@ -44,9 +55,13 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MoviePosterV
 
         private TextView itemText;
 
+        private ImageView posterImage;
+
         public MoviePosterViewHolder(View itemView) {
             super(itemView);
             itemText = itemView.findViewById(R.id.tv_item_text);
+            posterImage = itemView.findViewById(R.id.iv_poster);
+
             if (clickHandler != null) itemView.setOnClickListener(this);
         }
 
@@ -66,4 +81,11 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MoviePosterV
         notifyDataSetChanged();
     }
 
+    public void setImagesUrl(Uri imagesUrl) {
+        this.imagesUrl = imagesUrl;
+
+        notifyDataSetChanged();
+
+        // TODO: Refresh all views or something of
+    }
 }

@@ -14,6 +14,8 @@ import javax.inject.Named;
 import dagger.Reusable;
 import pt.rikmartins.adn.popularmoviesstage1.api.ApiModule;
 import pt.rikmartins.adn.popularmoviesstage1.api.TheMovieDb3Service;
+import pt.rikmartins.adn.popularmoviesstage1.api.model.Configuration;
+import pt.rikmartins.adn.popularmoviesstage1.api.model.ImagesConfiguration;
 import pt.rikmartins.adn.popularmoviesstage1.api.model.MovieListItem;
 import pt.rikmartins.adn.popularmoviesstage1.api.model.MoviePage;
 import retrofit2.Call;
@@ -31,10 +33,14 @@ public class Repository {
 
     private final static int NO_TOTAL_PAGES = -1;
 
+    // Defines how frequently the configuration will be updated
+    private final static long CONFIGURATION_UPDATE_DURATION = 5 * 86400000; // 5 days of milliseconds
+
     private int mode = NO_MODE;
 
     private final TheMovieDb3Service theMovieDb3Service;
     private final int startPage;
+    private final SharedPreferencesUtils sharedPreferencesUtils;
 
     private List<MovieListItem> movieListItems;
 
@@ -45,13 +51,19 @@ public class Repository {
     private final MutableLiveData<Boolean> workStatusLiveData;
 
     @Inject
-    public Repository(TheMovieDb3Service theMovieDb3Service, @Named(ApiModule.THE_MOVIE_DB_API_START_PAGE_NAME) int startPage) {
+    public Repository(TheMovieDb3Service theMovieDb3Service,
+                      @Named(ApiModule.THE_MOVIE_DB_API_START_PAGE_NAME) int startPage,
+                      SharedPreferencesUtils sharedPreferencesUtils) {
         this.theMovieDb3Service = theMovieDb3Service;
         this.startPage = startPage;
+        this.sharedPreferencesUtils = sharedPreferencesUtils;
+
         movieListLiveData = new MutableLiveData<>();
         workStatusLiveData = new MutableLiveData<>();
 
         switchMode(POPULAR_MODE);
+
+        if (isConfigurationUpdateRequired()) updateConfiguration();
     }
 
     public void switchMode(int mode) {
@@ -107,6 +119,60 @@ public class Repository {
                 }
             });
         }
+    }
+
+    public void updateConfiguration() {
+        theMovieDb3Service.getConfiguration().enqueue(new Callback<Configuration>() {
+            @Override
+            @EverythingIsNonNull
+            public void onResponse(Call<Configuration> call, Response<Configuration> response) {
+                if (response.isSuccessful()) {
+                    Configuration configuration = response.body();
+
+                    if (configuration != null) {
+                        ImagesConfiguration imagesConfiguration = configuration.getImages();
+
+                        if (imagesConfiguration != null) {
+                            // Not checking each individual value
+                            sharedPreferencesUtils.update(imagesConfiguration.getBaseUrl(),
+                                    imagesConfiguration.getSecureBaseUrl(),
+                                    imagesConfiguration.getPosterSizes());
+                        }
+                    }
+                    // TODO: Signal and deal with failure
+                }
+            }
+
+            @Override
+            @EverythingIsNonNull
+            public void onFailure(Call<Configuration> call, Throwable t) {
+                // TODO: Signal and deal with failure
+                Log.w(TAG, t.getMessage());
+            }
+        });
+    }
+
+    private boolean isConfigurationUpdateRequired() {
+
+        long configurationUpdateDate = sharedPreferencesUtils.getUpdateDate();
+        if (configurationUpdateDate == SharedPreferencesUtils.CONFIGURATION_UPDATE_DATE_MISSING) return true;
+        else {
+            long currentTimeMillis = System.currentTimeMillis();
+            // How long has it been since the last update to configuration
+            long elapsedTime = currentTimeMillis - configurationUpdateDate;
+            if (elapsedTime >= CONFIGURATION_UPDATE_DURATION) {
+                // It's over the threshold, so ask for the update
+                return true;
+            }
+        }
+
+        String configurationImagesBaseUrl = sharedPreferencesUtils.getImagesBaseUrl();
+        String configurationImagesSecureBaseUrl = sharedPreferencesUtils.getImagesSecureBaseUrl();
+        List<String> configurationImagesPosterSizes = sharedPreferencesUtils.getImagesPosterSizes();
+
+        // Not sure about this conditions, but I do think they make sense
+        return (configurationImagesBaseUrl == null && configurationImagesSecureBaseUrl == null) ||
+                configurationImagesPosterSizes == null;
     }
 
     public LiveData<List<MovieListItem>> getMovieListLiveData() {
