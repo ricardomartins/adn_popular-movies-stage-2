@@ -8,23 +8,35 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.paging.PagedListAdapter;
+import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.squareup.picasso.Picasso;
 
-import java.util.List;
-
 import pt.rikmartins.adn.popularmoviesstage1.R;
 import pt.rikmartins.adn.popularmoviesstage1.api.model.MovieListItem;
 
-public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MoviePosterViewHolder> {
+class MovieAdapter extends PagedListAdapter<MovieListItem, MovieAdapter.MoviePosterViewHolder> {
 
     private final MovieAdapterOnClickHandler clickHandler;
-    private List<MovieListItem> movieListItems;
 
     private Uri imagesUrl;
 
-    public MovieAdapter(MovieAdapterOnClickHandler clickHandler) {
+    MovieAdapter(MovieAdapterOnClickHandler clickHandler) {
+        super(new DiffUtil.ItemCallback<MovieListItem>() {
+            @Override
+            public boolean areItemsTheSame(@NonNull MovieListItem oldItem, @NonNull MovieListItem newItem) {
+                if (oldItem.getId() != null) return oldItem.getId().equals(newItem.getId());
+                return newItem.getId() == null;
+            }
+
+            @Override
+            public boolean areContentsTheSame(@NonNull MovieListItem oldItem, @NonNull MovieListItem newItem) {
+                return areItemsTheSame(oldItem, newItem); // It will have to do for now
+            }
+        });
+
         this.clickHandler = clickHandler;
     }
 
@@ -38,17 +50,14 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MoviePosterV
 
     @Override
     public void onBindViewHolder(@NonNull MoviePosterViewHolder holder, int position) {
-        MovieListItem movieListItem = movieListItems.get(position);
+        MovieListItem movieListItem = getItem(position);
+        if (movieListItem == null) return;
+
         holder.itemText.setText(movieListItem.getTitle());
         if (imagesUrl != null)
             Picasso.get()
                     .load(imagesUrl.buildUpon().appendEncodedPath(movieListItem.getPosterPath()).build())
                     .into(holder.posterImage);
-    }
-
-    @Override
-    public int getItemCount() {
-        return movieListItems == null ? 0 : movieListItems.size();
     }
 
     public class MoviePosterViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
@@ -57,7 +66,7 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MoviePosterV
 
         private ImageView posterImage;
 
-        public MoviePosterViewHolder(View itemView) {
+        MoviePosterViewHolder(View itemView) {
             super(itemView);
             itemText = itemView.findViewById(R.id.tv_item_text);
             posterImage = itemView.findViewById(R.id.iv_poster);
@@ -67,7 +76,7 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MoviePosterV
 
         @Override
         public void onClick(View v) {
-            MovieListItem movieListItem = movieListItems.get(getAdapterPosition());
+            MovieListItem movieListItem = getItem(getAdapterPosition());
             clickHandler.onClick(movieListItem);
         }
     }
@@ -76,16 +85,11 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MoviePosterV
         void onClick(MovieListItem movieListItem);
     }
 
-    public void setMovieListItems(List<MovieListItem> movieListItems) {
-        this.movieListItems = movieListItems;
-        notifyDataSetChanged();
-    }
-
-    public void setImagesUrl(Uri imagesUrl) {
+    void setImagesUrl(Uri imagesUrl) {
         this.imagesUrl = imagesUrl;
 
         notifyDataSetChanged();
 
-        // TODO: Refresh all views or something of
+        // TODO: Refresh all views or something of the kind
     }
 }

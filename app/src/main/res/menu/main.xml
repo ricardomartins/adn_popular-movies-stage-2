@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/order_by_popular"
+        android:title="@string/main_order_by_popular"
+        app:showAsAction="ifRoom"/>
+    <item
+        android:id="@+id/order_by_rate"
+        android:title="@string/main_order_by_rate"
+        app:showAsAction="ifRoom"/>
+</menu>

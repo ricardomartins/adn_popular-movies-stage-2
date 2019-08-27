@@ -2,10 +2,15 @@ package pt.rikmartins.adn.popularmoviesstage1.data;
 
 import android.util.Log;
 
+import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
+import androidx.paging.DataSource;
+import androidx.paging.LivePagedListBuilder;
+import androidx.paging.PagedList;
+import androidx.paging.PositionalDataSource;
 
-import java.util.ArrayList;
+import java.io.IOException;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -27,28 +32,22 @@ import retrofit2.internal.EverythingIsNonNull;
 public class Repository {
     private static final String TAG = Repository.class.getSimpleName();
 
-    private final static int NO_MODE = -1;
     public final static int POPULAR_MODE = 1;
     public final static int TOP_RATED_MODE = 2;
-
-    private final static int NO_TOTAL_PAGES = -1;
 
     // Defines how frequently the configuration will be updated
     private final static long CONFIGURATION_UPDATE_DURATION = 5 * 86400000; // 5 days of milliseconds
 
-    private int mode = NO_MODE;
+    private MutableLiveData<Integer> mode = new MutableLiveData<>();
 
     private final TheMovieDb3Service theMovieDb3Service;
     private final int startPage;
     private final SharedPreferencesUtils sharedPreferencesUtils;
 
-    private List<MovieListItem> movieListItems;
-
-    private int nextPage;
-    private int totalPages;
-
-    private final MutableLiveData<List<MovieListItem>> movieListLiveData;
+    private final LiveData<PagedList<MovieListItem>> movieListLiveData;
     private final MutableLiveData<Boolean> workStatusLiveData;
+
+    private PositionalDataSource<MovieListItem> movieListItemPositionalDataSource = null;
 
     @Inject
     public Repository(TheMovieDb3Service theMovieDb3Service,
@@ -58,67 +57,89 @@ public class Repository {
         this.startPage = startPage;
         this.sharedPreferencesUtils = sharedPreferencesUtils;
 
-        movieListLiveData = new MutableLiveData<>();
+        movieListLiveData = new LivePagedListBuilder<>(new MovieListItemDataSourceFactory(), 20).build();
         workStatusLiveData = new MutableLiveData<>();
 
-        switchMode(POPULAR_MODE);
+        mode.setValue(POPULAR_MODE);
 
         if (isConfigurationUpdateRequired()) updateConfiguration();
     }
 
-    public void switchMode(int mode) {
-        if (this.mode != mode) {
-            this.mode = mode;
-            movieListItems = new ArrayList<>();
-            nextPage = startPage;
-            totalPages = NO_TOTAL_PAGES;
-            movieListLiveData.setValue(movieListItems);
+    private class MovieListItemDataSourceFactory extends DataSource.Factory<Integer, MovieListItem> {
+        @NonNull
+        @Override
+        public DataSource<Integer, MovieListItem> create() {
+            movieListItemPositionalDataSource = new MovieListItemDataSource();
+
+            return movieListItemPositionalDataSource;
         }
     }
 
-    public void requestMoreData() {
-        if (totalPages == NO_TOTAL_PAGES || nextPage <= totalPages) {
-            Call<MoviePage> moviesPageCall;
-            if (mode == TOP_RATED_MODE) {
-                moviesPageCall = theMovieDb3Service.getTopRatedMovies(nextPage);
-            } else {
-                moviesPageCall = theMovieDb3Service.getPopularMovies(nextPage); // This is default if weird values get into `mode`
+    private class MovieListItemDataSource extends PositionalDataSource<MovieListItem> {
+        @Override
+        public void loadInitial(@NonNull LoadInitialParams params, @NonNull LoadInitialCallback<MovieListItem> callback) {
+            try {
+                final MoviePage moviePage = request((params.requestedStartPosition / params.pageSize) + startPage);
+
+                final List<MovieListItem> results;
+                if (moviePage != null && (results = moviePage.getResults()) != null) {
+                    final Integer totalResults = moviePage.getTotalResults();
+                    final int position = computeInitialLoadPosition(params, totalResults);
+                    callback.onResult(results, position, totalResults);
+                    return;
+                }
+            } catch (IOException e) {
+                Log.w(TAG, e.getMessage());
             }
-
-            workStatusLiveData.setValue(true);
-            moviesPageCall.enqueue(new Callback<MoviePage>() {
-                @Override
-                @EverythingIsNonNull
-                public void onResponse(Call<MoviePage> call, Response<MoviePage> response) {
-                    onFinished();
-                    if (response.isSuccessful()) {
-                        MoviePage moviePage = response.body();
-                        if (moviePage != null) {
-                            List<MovieListItem> results = moviePage.getResults();
-                            totalPages = moviePage.getTotalPages();
-                            nextPage = moviePage.getPage() + 1;
-                            if (results != null && !results.isEmpty()) {
-                                movieListItems.addAll(results);
-                                movieListLiveData.setValue(movieListItems);
-                            }
-                        }
-                    }
-                    // TODO: Signal and deal with failure
-                }
-
-                @Override
-                @EverythingIsNonNull
-                public void onFailure(Call<MoviePage> call, Throwable t) {
-                    onFinished();
-                    // TODO: Signal and deal with failure
-                    Log.w(TAG, t.getMessage());
-                }
-
-                private void onFinished() {
-                    workStatusLiveData.setValue(false);
-                }
-            });
+            // TODO: Signal and deal with failure
         }
+
+        @Override
+        public void loadRange(@NonNull LoadRangeParams params, @NonNull LoadRangeCallback<MovieListItem> callback) {
+            try {
+                final MoviePage moviePage = request((params.startPosition / params.loadSize) + startPage);
+
+                final List<MovieListItem> results;
+                if (moviePage != null && (results = moviePage.getResults()) != null){
+                    callback.onResult(results);
+                    return;
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            // TODO: Signal and deal with failure
+        }
+
+        private MoviePage request(Integer page) throws IOException {
+            workStatusLiveData.postValue(true);
+            Log.i(TAG, "Retrieving page " + page);
+            final Call<MoviePage> moviesPageCall = getModeUnboxed() == TOP_RATED_MODE
+                    ? theMovieDb3Service.getTopRatedMovies(page)
+                    : theMovieDb3Service.getPopularMovies(page);
+
+            final Response<MoviePage> response = moviesPageCall.execute();
+            workStatusLiveData.postValue(false);
+            if (response.isSuccessful()) return response.body();
+
+            return null;
+        }
+    }
+
+    private int getModeUnboxed() {
+        final Integer value = mode.getValue();
+        return value != null ? value : POPULAR_MODE;
+    }
+
+    public void switchMode(int mode) {
+        final int oldMode = getModeUnboxed();
+        if (oldMode != mode && (mode == POPULAR_MODE || mode == TOP_RATED_MODE)) {
+            this.mode.setValue(mode);
+            movieListItemPositionalDataSource.invalidate();
+        }
+    }
+
+    public LiveData<Integer> getMode() {
+        return mode;
     }
 
     public void updateConfiguration() {
@@ -127,10 +148,10 @@ public class Repository {
             @EverythingIsNonNull
             public void onResponse(Call<Configuration> call, Response<Configuration> response) {
                 if (response.isSuccessful()) {
-                    Configuration configuration = response.body();
+                    final Configuration configuration = response.body();
 
                     if (configuration != null) {
-                        ImagesConfiguration imagesConfiguration = configuration.getImages();
+                        final ImagesConfiguration imagesConfiguration = configuration.getImages();
 
                         if (imagesConfiguration != null) {
                             // Not checking each individual value
@@ -154,28 +175,29 @@ public class Repository {
 
     private boolean isConfigurationUpdateRequired() {
 
-        long configurationUpdateDate = sharedPreferencesUtils.getUpdateDate();
-        if (configurationUpdateDate == SharedPreferencesUtils.CONFIGURATION_UPDATE_DATE_MISSING) return true;
+        final long configurationUpdateDate = sharedPreferencesUtils.getUpdateDate();
+        if (configurationUpdateDate == SharedPreferencesUtils.CONFIGURATION_UPDATE_DATE_MISSING)
+            return true;
         else {
-            long currentTimeMillis = System.currentTimeMillis();
+            final long currentTimeMillis = System.currentTimeMillis();
             // How long has it been since the last update to configuration
-            long elapsedTime = currentTimeMillis - configurationUpdateDate;
+            final long elapsedTime = currentTimeMillis - configurationUpdateDate;
             if (elapsedTime >= CONFIGURATION_UPDATE_DURATION) {
                 // It's over the threshold, so ask for the update
                 return true;
             }
         }
 
-        String configurationImagesBaseUrl = sharedPreferencesUtils.getImagesBaseUrl();
-        String configurationImagesSecureBaseUrl = sharedPreferencesUtils.getImagesSecureBaseUrl();
-        List<String> configurationImagesPosterSizes = sharedPreferencesUtils.getImagesPosterSizes();
+        final String configurationImagesBaseUrl = sharedPreferencesUtils.getImagesBaseUrl();
+        final String configurationImagesSecureBaseUrl = sharedPreferencesUtils.getImagesSecureBaseUrl();
+        final List<String> configurationImagesPosterSizes = sharedPreferencesUtils.getImagesPosterSizes();
 
         // Not sure about this conditions, but I do think they make sense
         return (configurationImagesBaseUrl == null && configurationImagesSecureBaseUrl == null) ||
                 configurationImagesPosterSizes == null;
     }
 
-    public LiveData<List<MovieListItem>> getMovieListLiveData() {
+    public LiveData<PagedList<MovieListItem>> getMovieListLiveData() {
         return movieListLiveData;
     }
 

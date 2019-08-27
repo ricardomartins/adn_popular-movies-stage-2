@@ -5,8 +5,7 @@ import android.app.Application;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
-
-import java.util.List;
+import androidx.paging.PagedList;
 
 import javax.inject.Inject;
 
@@ -20,10 +19,10 @@ public class MainViewModel extends AndroidViewModel {
 
     public MainViewModel(@NonNull Application application) {
         super(application);
-        ((AppComponent.ComponentProvider) getApplication()).getComponent().inject(this);
+        ((AppComponent.ComponentProvider) application).getComponent().inject(this);
     }
 
-    LiveData<List<MovieListItem>> getMovieListLiveData() {
+    LiveData<PagedList<MovieListItem>> getMovieListLiveData() {
         return repository.getMovieListLiveData();
     }
 
@@ -31,8 +30,8 @@ public class MainViewModel extends AndroidViewModel {
         return repository.getWorkStatusLiveData();
     }
 
-    void requestMoreData() {
-        repository.requestMoreData();
+    LiveData<Integer> getMode() {
+        return repository.getMode();
     }
 
     void switchMode(int mode) {

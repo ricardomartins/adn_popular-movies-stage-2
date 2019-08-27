@@ -14,6 +14,7 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProviders;
+import androidx.paging.PagedList;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -24,6 +25,7 @@ import javax.inject.Inject;
 import pt.rikmartins.adn.popularmoviesstage1.AppComponent;
 import pt.rikmartins.adn.popularmoviesstage1.R;
 import pt.rikmartins.adn.popularmoviesstage1.api.model.MovieListItem;
+import pt.rikmartins.adn.popularmoviesstage1.data.Repository;
 import pt.rikmartins.adn.popularmoviesstage1.data.SharedPreferencesUtils;
 
 public class MainActivity extends AppCompatActivity implements MovieAdapter.MovieAdapterOnClickHandler {
@@ -68,14 +70,10 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
         movieListRecyclerView.setAdapter(adapter);
         movieListRecyclerView.setLayoutManager(layoutManager);
 
-        viewModel.getMovieListLiveData().observe(this, new Observer<List<MovieListItem>>() {
+        viewModel.getMovieListLiveData().observe(this, new Observer<PagedList<MovieListItem>>() {
             @Override
-            public void onChanged(List<MovieListItem> movieListItems) {
-                if (movieListItems == null || movieListItems.isEmpty()) showPlaceholder();
-                else {
-                    adapter.setMovieListItems(movieListItems);
-                    showList();
-                }
+            public void onChanged(PagedList<MovieListItem> movieListItems) {
+                adapter.submitList(movieListItems);
             }
         });
 
@@ -128,14 +126,37 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        menu.add("get").setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+        getMenuInflater().inflate(R.menu.main, menu);
+
+        final MenuItem orderByPopular = menu.findItem(R.id.order_by_popular);
+        final MenuItem orderByRate = menu.findItem(R.id.order_by_rate);
+
+        viewModel.getMode().observe(this, new Observer<Integer>() {
             @Override
-            public boolean onMenuItemClick(MenuItem item) {
-                viewModel.requestMoreData();
-                return true;
+            public void onChanged(Integer boxedMode) {
+                if (boxedMode != null) {
+                    boolean isPopularMode = boxedMode == Repository.POPULAR_MODE;
+                    orderByPopular.setVisible(!isPopularMode);
+                    orderByRate.setVisible(isPopularMode);
+                }
             }
-        }).setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
+        });
+
         return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.order_by_popular:
+                viewModel.switchMode(Repository.POPULAR_MODE);
+                return true;
+            case R.id.order_by_rate:
+                viewModel.switchMode(Repository.TOP_RATED_MODE);
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 
     private void showList() {
@@ -161,7 +182,8 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
         // TODO
     }
 
-    private static class RequirementsMissingException extends Exception {}
+    private static class RequirementsMissingException extends Exception {
+    }
 
     private Uri getImagesUrl() throws RequirementsMissingException {
         String baseUrl = sharedPreferencesUtils.getImagesPreferredBaseUrl();
