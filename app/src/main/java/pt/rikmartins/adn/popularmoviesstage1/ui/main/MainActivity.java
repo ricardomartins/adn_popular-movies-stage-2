@@ -1,5 +1,6 @@
 package pt.rikmartins.adn.popularmoviesstage1.ui.main;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
@@ -18,21 +19,14 @@ import androidx.paging.PagedList;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.util.List;
-
-import javax.inject.Inject;
-
-import pt.rikmartins.adn.popularmoviesstage1.AppComponent;
 import pt.rikmartins.adn.popularmoviesstage1.R;
 import pt.rikmartins.adn.popularmoviesstage1.api.model.MovieListItem;
 import pt.rikmartins.adn.popularmoviesstage1.data.Repository;
 import pt.rikmartins.adn.popularmoviesstage1.data.SharedPreferencesUtils;
+import pt.rikmartins.adn.popularmoviesstage1.ui.detail.DetailsActivity;
 
 public class MainActivity extends AppCompatActivity implements MovieAdapter.MovieAdapterOnClickHandler {
     private static final String TAG = MainActivity.class.getSimpleName();
-
-    @Inject
-    SharedPreferencesUtils sharedPreferencesUtils;
 
     private TextView placeholderTextView;
     private RecyclerView movieListRecyclerView;
@@ -55,7 +49,6 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
         setContentView(R.layout.activity_main);
 
         // Injection
-        ((AppComponent.ComponentProvider) getApplication()).getComponent().inject(this);
         viewModel = ViewModelProviders.of(this).get(MainViewModel.class);
 
         movieListRecyclerView = findViewById(R.id.rv_movie_list);
@@ -93,8 +86,8 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
                     case SharedPreferencesUtils.SP_CONFIGURATION_IMAGES_SECURE_BASE_URL_KEY:
                     case SharedPreferencesUtils.SP_CONFIGURATION_IMAGES_POSTER_SIZES_KEY:
                         try {
-                            adapter.setImagesUrl(getImagesUrl());
-                        } catch (RequirementsMissingException rme) {
+                            adapter.setImagesUrl(viewModel.getImagesUrl(desiredPosterSize));
+                        } catch (Repository.RequirementsMissingException rme) {
                             viewModel.updateConfiguration();
                         }
                 }
@@ -109,8 +102,8 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
             DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
             setPosterSizeByWidth((int) ((float) movieListRecyclerView.getWidth() / (float) columnQuant / displayMetrics.density));
             try {
-                adapter.setImagesUrl(getImagesUrl());
-            } catch (RequirementsMissingException rme) {
+                adapter.setImagesUrl(viewModel.getImagesUrl(desiredPosterSize));
+            } catch (Repository.RequirementsMissingException rme) {
                 viewModel.updateConfiguration();
             }
         }
@@ -179,56 +172,11 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
 
     @Override
     public void onClick(MovieListItem movieListItem) {
-        // TODO
-    }
+        final Intent intent = new Intent(this, DetailsActivity.class);
 
-    private static class RequirementsMissingException extends Exception {
-    }
+        final Bundle bundle = DetailsActivity.buildBundle(movieListItem.getId());
+        intent.putExtras(bundle);
 
-    private Uri getImagesUrl() throws RequirementsMissingException {
-        String baseUrl = sharedPreferencesUtils.getImagesPreferredBaseUrl();
-        if (baseUrl == null) throw new RequirementsMissingException();
-
-        String posterSize = getPosterSize(desiredPosterSize);
-
-        return getImagesUrl(Uri.parse(baseUrl), posterSize);
-    }
-
-    private Uri getImagesUrl(Uri baseUrl, String posterSize) {
-        return baseUrl.buildUpon().appendPath(posterSize).build();
-    }
-
-    private String getPosterSize(String desiredPosterSize) throws RequirementsMissingException {
-        List<String> imagesPosterSizes = sharedPreferencesUtils.getImagesPosterSizes();
-        if (imagesPosterSizes == null) throw new RequirementsMissingException();
-
-        if (desiredPosterSize == null) {
-            Log.w(TAG, "No poster size selected, building URL with worst quality"); // TODO: Create a const with the message
-            return imagesPosterSizes.get(0);
-        }
-
-        String prefix = desiredPosterSize.substring(0, 1);
-        int size = Integer.parseInt(desiredPosterSize.substring(1));
-
-        String posterSize = null;
-
-        boolean prefixFound = false;
-        boolean adequateSizeFound = false;
-        for (String ips : imagesPosterSizes) {
-            posterSize = ips;
-            if (ips.startsWith(prefix)) {
-                prefixFound = true;
-                if (size <= Integer.parseInt(ips.substring(1))) {
-                    adequateSizeFound = true;
-                    break;
-                }
-            }
-        }
-        if (!prefixFound)
-            Log.w(TAG, "No image size with width as dimension was found, defaulting to \"" + posterSize + "\"."); // TODO: Create a const with the message
-        else if (!adequateSizeFound)
-            Log.i(TAG, "No image size with appropriate size was found, defaulting to \"" + posterSize + "\"."); // TODO: Create a const with the message
-
-        return posterSize;
+        startActivity(intent);
     }
 }

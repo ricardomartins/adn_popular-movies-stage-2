@@ -1,5 +1,7 @@
 package pt.rikmartins.adn.popularmoviesstage1.data;
 
+import android.content.SharedPreferences;
+import android.net.Uri;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -44,26 +46,39 @@ public class Repository {
     private final int startPage;
     private final SharedPreferencesUtils sharedPreferencesUtils;
 
-    private final LiveData<PagedList<MovieListItem>> movieListLiveData;
-    private final MutableLiveData<Boolean> workStatusLiveData;
+    private final LiveData<PagedList<MovieListItem>> movieListLiveData = new LivePagedListBuilder<>(new MovieListItemDataSourceFactory(), 20).build();
+    private final MutableLiveData<Boolean> workStatusLiveData = new MutableLiveData<>();
 
     private PositionalDataSource<MovieListItem> movieListItemPositionalDataSource = null;
+
+    private MutableLiveData<String>
 
     @Inject
     public Repository(TheMovieDb3Service theMovieDb3Service,
                       @Named(ApiModule.THE_MOVIE_DB_API_START_PAGE_NAME) int startPage,
-                      SharedPreferencesUtils sharedPreferencesUtils) {
+                      final SharedPreferencesUtils sharedPreferencesUtils) {
         this.theMovieDb3Service = theMovieDb3Service;
         this.startPage = startPage;
         this.sharedPreferencesUtils = sharedPreferencesUtils;
 
-        movieListLiveData = new LivePagedListBuilder<>(new MovieListItemDataSourceFactory(), 20).build();
-        workStatusLiveData = new MutableLiveData<>();
-
         mode.setValue(POPULAR_MODE);
 
         if (isConfigurationUpdateRequired()) updateConfiguration();
+
+        sharedPreferencesUtils.getSharedPreferences().registerOnSharedPreferenceChangeListener(new SharedPreferences.OnSharedPreferenceChangeListener() {
+            @Override
+            public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+                switch (key) {
+                    case SharedPreferencesUtils.SP_CONFIGURATION_IMAGES_BASE_URL_KEY:
+                    case SharedPreferencesUtils.SP_CONFIGURATION_IMAGES_SECURE_BASE_URL_KEY:
+                    case SharedPreferencesUtils.SP_CONFIGURATION_IMAGES_POSTER_SIZES_KEY:
+                        sharedPreferencesUtils.getImagesBaseUrl();
+                }
+            }
+        });
     }
+
+
 
     private class MovieListItemDataSourceFactory extends DataSource.Factory<Integer, MovieListItem> {
         @NonNull
@@ -91,7 +106,7 @@ public class Repository {
             } catch (IOException e) {
                 Log.w(TAG, e.getMessage());
             }
-            // TODO: Signal and deal with failure
+            // What do you mean "unhandled error"!!?
         }
 
         @Override
@@ -160,8 +175,8 @@ public class Repository {
                                     imagesConfiguration.getPosterSizes());
                         }
                     }
-                    // TODO: Signal and deal with failure
                 }
+                // TODO: Signal and deal with failure
             }
 
             @Override
@@ -203,5 +218,79 @@ public class Repository {
 
     public LiveData<Boolean> getWorkStatusLiveData() {
         return workStatusLiveData;
+    }
+
+    public LiveData<MovieListItem> getMovie(int movieId) {
+        final MutableLiveData<MovieListItem> liveResult = new MutableLiveData<>();
+
+        theMovieDb3Service.getMovie(movieId).enqueue(new Callback<MovieListItem>() {
+            @Override
+            @EverythingIsNonNull
+            public void onResponse(Call<MovieListItem> call, Response<MovieListItem> response) {
+                if (response.isSuccessful()) {
+                    final MovieListItem movie = response.body();
+                    if (movie != null) liveResult.postValue(movie);
+                }
+                // TODO: Signal and deal with failure
+            }
+
+            @Override
+            @EverythingIsNonNull
+            public void onFailure(Call<MovieListItem> call, Throwable t) {
+                // TODO: Signal and deal with failure
+                Log.w(TAG, t.getMessage());
+            }
+        });
+
+        return liveResult;
+    }
+
+    public static class RequirementsMissingException extends Exception {}
+
+    public Uri getImagesUrl(String desiredPosterSize) throws RequirementsMissingException {
+        String baseUrl = sharedPreferencesUtils.getImagesPreferredBaseUrl();
+        if (baseUrl == null) throw new RequirementsMissingException();
+
+        String posterSize = getPosterSize(desiredPosterSize);
+
+        return getImagesUrl(Uri.parse(baseUrl), posterSize);
+    }
+
+    private Uri getImagesUrl(Uri baseUrl, String posterSize) {
+        return baseUrl.buildUpon().appendPath(posterSize).build();
+    }
+
+    private String getPosterSize(String desiredPosterSize) throws RequirementsMissingException {
+        List<String> imagesPosterSizes = sharedPreferencesUtils.getImagesPosterSizes();
+        if (imagesPosterSizes == null) throw new RequirementsMissingException();
+
+        if (desiredPosterSize == null) {
+            Log.w(TAG, "No poster size selected, building URL with worst quality"); // TODO: Create a const with the message
+            return imagesPosterSizes.get(0);
+        }
+
+        String prefix = desiredPosterSize.substring(0, 1);
+        int size = Integer.parseInt(desiredPosterSize.substring(1));
+
+        String posterSize = null;
+
+        boolean prefixFound = false;
+        boolean adequateSizeFound = false;
+        for (String ips : imagesPosterSizes) {
+            posterSize = ips;
+            if (ips.startsWith(prefix)) {
+                prefixFound = true;
+                if (size <= Integer.parseInt(ips.substring(1))) {
+                    adequateSizeFound = true;
+                    break;
+                }
+            }
+        }
+        if (!prefixFound)
+            Log.w(TAG, "No image size with width as dimension was found, defaulting to \"" + posterSize + "\"."); // TODO: Create a const with the message
+        else if (!adequateSizeFound)
+            Log.i(TAG, "No image size with appropriate size was found, defaulting to \"" + posterSize + "\"."); // TODO: Create a const with the message
+
+        return posterSize;
     }
 }

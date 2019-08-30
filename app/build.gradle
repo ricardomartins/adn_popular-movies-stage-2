@@ -4,7 +4,7 @@ android {
     compileSdkVersion 28
     defaultConfig {
         applicationId "pt.rikmartins.adn.popularmoviesstage1"
-        minSdkVersion 16
+        minSdkVersion 17
         targetSdkVersion 28
         versionCode 1
         versionName "1.0"
@@ -25,6 +25,9 @@ android {
             // under the name TheMovieDb_v3auth_ApiKey
             buildConfigField 'String', "TheMovieDbApiKey", TheMovieDb_v3auth_ApiKey
         }
+    }
+    dataBinding {
+        enabled = true
     }
 }
 

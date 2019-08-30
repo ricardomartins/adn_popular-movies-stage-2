@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+        <import type="android.view.View"/>
+
+        <variable
+            name="viewModel"
+            type="pt.rikmartins.adn.popularmoviesstage1.ui.detail.DetailsViewModel" />
+    </data>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".ui.detail.DetailsActivity">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/default_margin">
+
+            <TextView
+                android:id="@+id/titleLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="title"
+                android:textAppearance="@style/TextAppearance.AppCompat.Small"
+                app:layout_constraintBaseline_toBaselineOf="@id/title"
+                app:layout_constraintEnd_toStartOf="@id/labelBarrier"
+                app:layout_constraintHorizontal_bias="1.0"
+                app:layout_constraintStart_toStartOf="parent" />
+
+            <TextView
+                android:id="@+id/releaseDateLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="release date"
+                android:textAppearance="@style/TextAppearance.AppCompat.Small"
+                app:layout_constraintBaseline_toBaselineOf="@id/releaseDate"
+                app:layout_constraintEnd_toStartOf="@id/labelBarrier"
+                app:layout_constraintHorizontal_bias="1.0"
+                app:layout_constraintStart_toStartOf="parent" />
+
+            <TextView
+                android:id="@+id/voteAverageLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="vote average"
+                android:textAppearance="@style/TextAppearance.AppCompat.Small"
+                app:layout_constraintBaseline_toBaselineOf="@id/voteAverage"
+                app:layout_constraintEnd_toStartOf="@id/labelBarrier"
+                app:layout_constraintHorizontal_bias="1.0"
+                app:layout_constraintStart_toStartOf="parent" />
+
+            <TextView
+                android:id="@+id/plotSynopsisLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="plot synopsis"
+                android:textAppearance="@style/TextAppearance.AppCompat.Small"
+                app:layout_constraintBaseline_toBaselineOf="@id/plotSynopsis"
+                app:layout_constraintEnd_toStartOf="@id/labelBarrier"
+                app:layout_constraintHorizontal_bias="1.0"
+                app:layout_constraintStart_toStartOf="parent" />
+
+            <androidx.constraintlayout.widget.Barrier
+                android:id="@+id/labelBarrier"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:barrierDirection="right"
+                app:constraint_referenced_ids=",releaseDateLabel,voteAverageLabel,titleLabel,plotSynopsisLabel" />
+
+            <TextView
+                android:id="@+id/title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/default_margin"
+                android:layout_marginTop="@dimen/default_margin"
+                android:textAppearance="@style/TextAppearance.AppCompat.Body2"
+                android:text="@{viewModel.movie.title}"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@id/labelBarrier"
+                app:layout_constraintTop_toBottomOf="@id/moviePoster"
+                tools:text="Something something something dark side" />
+
+            <androidx.constraintlayout.widget.Group
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:constraint_referenced_ids="title,titleLabel"
+                android:visibility="@{viewModel.movie.title != null ? View.VISIBLE : View.GONE}"/>
+
+            <TextView
+                android:id="@+id/releaseDate"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/default_margin"
+                android:layout_marginTop="@dimen/default_margin"
+                android:textAppearance="@style/TextAppearance.AppCompat.Body2"
+                android:text="@{viewModel.movie.releaseDate}"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@id/labelBarrier"
+                app:layout_constraintTop_toBottomOf="@id/title" />
+
+            <androidx.constraintlayout.widget.Group
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:constraint_referenced_ids="releaseDate,releaseDateLabel"
+                android:visibility="@{viewModel.movie.releaseDate != null ? View.VISIBLE : View.GONE}"/>
+
+            <ImageView
+                android:id="@+id/moviePoster"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/details_movie_poster_height"
+                app:layout_constraintTop_toTopOf="parent"
+                android:scaleType="fitCenter"
+                android:visibility="gone"
+                tools:src="@mipmap/ic_launcher"/>
+
+            <TextView
+                android:id="@+id/voteAverage"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/default_margin"
+                android:layout_marginTop="@dimen/default_margin"
+                android:textAppearance="@style/TextAppearance.AppCompat.Body2"
+                android:text="@{viewModel.movie.voteAverage.toString()}"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@id/labelBarrier"
+                app:layout_constraintTop_toBottomOf="@id/releaseDate" />
+
+            <androidx.constraintlayout.widget.Group
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:constraint_referenced_ids="voteAverage,voteAverageLabel"
+                android:visibility="@{viewModel.movie.voteAverage != null ? View.VISIBLE : View.GONE}"/>
+
+            <TextView
+                android:id="@+id/plotSynopsis"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/default_margin"
+                android:layout_marginTop="@dimen/default_margin"
+                android:textAppearance="@style/TextAppearance.AppCompat.Body2"
+                android:text="@{viewModel.movie.overview}"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@id/labelBarrier"
+                app:layout_constraintTop_toBottomOf="@id/voteAverage" />
+
+            <androidx.constraintlayout.widget.Group
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:constraint_referenced_ids="plotSynopsis,plotSynopsisLabel"
+                android:visibility="@{viewModel.movie.overview != null ? View.VISIBLE : View.GONE}"/>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </ScrollView>
+</layout>

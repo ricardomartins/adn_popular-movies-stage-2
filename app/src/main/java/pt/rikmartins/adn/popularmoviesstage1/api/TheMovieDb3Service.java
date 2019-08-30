@@ -4,6 +4,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 
 import pt.rikmartins.adn.popularmoviesstage1.api.model.Configuration;
+import pt.rikmartins.adn.popularmoviesstage1.api.model.MovieListItem;
 import pt.rikmartins.adn.popularmoviesstage1.api.model.MoviePage;
 import retrofit2.Call;
 
@@ -24,6 +25,10 @@ public class TheMovieDb3Service {
 
     public Call<MoviePage> getTopRatedMovies(Integer page) {
         return theMovieDatabaseApi3.getTopRatedMovies(theMovieDbApiV3Key, null, page, null);
+    }
+
+    public Call<MovieListItem> getMovie(int movieId) {
+        return theMovieDatabaseApi3.getMovie(movieId, theMovieDbApiV3Key, null);
     }
 
     public Call<Configuration> getConfiguration() {

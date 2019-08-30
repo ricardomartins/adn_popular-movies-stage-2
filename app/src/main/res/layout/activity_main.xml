@@ -16,7 +16,7 @@
         android:id="@+id/pb_movie_list"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="@dimen/default_margin"
         android:visibility="invisible"
         android:layout_gravity="center_horizontal"/>
 
