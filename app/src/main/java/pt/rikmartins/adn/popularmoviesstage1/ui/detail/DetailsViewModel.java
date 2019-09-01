@@ -13,6 +13,7 @@ import javax.inject.Inject;
 
 import pt.rikmartins.adn.popularmoviesstage1.AppComponent;
 import pt.rikmartins.adn.popularmoviesstage1.api.model.MovieListItem;
+import pt.rikmartins.adn.popularmoviesstage1.data.ImageUrlGenerator;
 import pt.rikmartins.adn.popularmoviesstage1.data.Repository;
 
 public class DetailsViewModel extends AndroidViewModel {
@@ -37,5 +38,9 @@ public class DetailsViewModel extends AndroidViewModel {
 
     void setMovieId(int movieId) {
         this.movieId.setValue(movieId);
+    }
+
+    LiveData<ImageUrlGenerator> getImageUrlGenerator() {
+        return repository.getImageUrlGenerator();
     }
 }

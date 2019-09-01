@@ -4,14 +4,13 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
-
 import dagger.Module;
 import dagger.Provides;
 
 @Module
-public class DataModule {
+public abstract class DataModule {
     @Provides
-    public SharedPreferences providesDefaultSharedPreferences(Context context) {
+    public static SharedPreferences providesDefaultSharedPreferences(Context context) {
         return PreferenceManager.getDefaultSharedPreferences(context);
     }
 }

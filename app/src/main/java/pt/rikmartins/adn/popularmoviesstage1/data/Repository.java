@@ -1,7 +1,6 @@
 package pt.rikmartins.adn.popularmoviesstage1.data;
 
 import android.content.SharedPreferences;
-import android.net.Uri;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -16,10 +15,8 @@ import java.io.IOException;
 import java.util.List;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 
 import dagger.Reusable;
-import pt.rikmartins.adn.popularmoviesstage1.api.ApiModule;
 import pt.rikmartins.adn.popularmoviesstage1.api.TheMovieDb3Service;
 import pt.rikmartins.adn.popularmoviesstage1.api.model.Configuration;
 import pt.rikmartins.adn.popularmoviesstage1.api.model.ImagesConfiguration;
@@ -40,10 +37,9 @@ public class Repository {
     // Defines how frequently the configuration will be updated
     private final static long CONFIGURATION_UPDATE_DURATION = 5 * 86400000; // 5 days of milliseconds
 
-    private MutableLiveData<Integer> mode = new MutableLiveData<>();
+    private final MutableLiveData<Integer> mode = new MutableLiveData<>();
 
     private final TheMovieDb3Service theMovieDb3Service;
-    private final int startPage;
     private final SharedPreferencesUtils sharedPreferencesUtils;
 
     private final LiveData<PagedList<MovieListItem>> movieListLiveData = new LivePagedListBuilder<>(new MovieListItemDataSourceFactory(), 20).build();
@@ -51,34 +47,36 @@ public class Repository {
 
     private PositionalDataSource<MovieListItem> movieListItemPositionalDataSource = null;
 
-    private MutableLiveData<String>
+    private final MutableLiveData<ImageUrlGenerator> imageUrlGenerator = new MutableLiveData<>();
 
     @Inject
     public Repository(TheMovieDb3Service theMovieDb3Service,
-                      @Named(ApiModule.THE_MOVIE_DB_API_START_PAGE_NAME) int startPage,
                       final SharedPreferencesUtils sharedPreferencesUtils) {
         this.theMovieDb3Service = theMovieDb3Service;
-        this.startPage = startPage;
         this.sharedPreferencesUtils = sharedPreferencesUtils;
 
         mode.setValue(POPULAR_MODE);
 
         if (isConfigurationUpdateRequired()) updateConfiguration();
 
+        if (sharedPreferencesUtils.getImagesSecureBaseUrl() != null) postImageUrlGenerator();
+
         sharedPreferencesUtils.getSharedPreferences().registerOnSharedPreferenceChangeListener(new SharedPreferences.OnSharedPreferenceChangeListener() {
             @Override
             public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-                switch (key) {
-                    case SharedPreferencesUtils.SP_CONFIGURATION_IMAGES_BASE_URL_KEY:
-                    case SharedPreferencesUtils.SP_CONFIGURATION_IMAGES_SECURE_BASE_URL_KEY:
-                    case SharedPreferencesUtils.SP_CONFIGURATION_IMAGES_POSTER_SIZES_KEY:
-                        sharedPreferencesUtils.getImagesBaseUrl();
+                if (SharedPreferencesUtils.SP_CONFIGURATION_IMAGES_SECURE_BASE_URL_KEY.equals(key)) {
+                    postImageUrlGenerator();
                 }
             }
         });
     }
 
-
+    private void postImageUrlGenerator() {
+        final String imagesPreferredBaseUrl = sharedPreferencesUtils.getImagesPreferredBaseUrl();
+        final List<String> imagesPosterSizes = sharedPreferencesUtils.getImagesPosterSizes();
+        final ImageUrlGenerator imageUrlGenerator = new ImageUrlGenerator(imagesPreferredBaseUrl, imagesPosterSizes);
+        Repository.this.imageUrlGenerator.postValue(imageUrlGenerator);
+    }
 
     private class MovieListItemDataSourceFactory extends DataSource.Factory<Integer, MovieListItem> {
         @NonNull
@@ -94,7 +92,7 @@ public class Repository {
         @Override
         public void loadInitial(@NonNull LoadInitialParams params, @NonNull LoadInitialCallback<MovieListItem> callback) {
             try {
-                final MoviePage moviePage = request((params.requestedStartPosition / params.pageSize) + startPage);
+                final MoviePage moviePage = request((params.requestedStartPosition / params.pageSize) + theMovieDb3Service.startPage);
 
                 final List<MovieListItem> results;
                 if (moviePage != null && (results = moviePage.getResults()) != null) {
@@ -112,7 +110,7 @@ public class Repository {
         @Override
         public void loadRange(@NonNull LoadRangeParams params, @NonNull LoadRangeCallback<MovieListItem> callback) {
             try {
-                final MoviePage moviePage = request((params.startPosition / params.loadSize) + startPage);
+                final MoviePage moviePage = request((params.startPosition / params.loadSize) + theMovieDb3Service.startPage);
 
                 final List<MovieListItem> results;
                 if (moviePage != null && (results = moviePage.getResults()) != null){
@@ -245,52 +243,7 @@ public class Repository {
         return liveResult;
     }
 
-    public static class RequirementsMissingException extends Exception {}
-
-    public Uri getImagesUrl(String desiredPosterSize) throws RequirementsMissingException {
-        String baseUrl = sharedPreferencesUtils.getImagesPreferredBaseUrl();
-        if (baseUrl == null) throw new RequirementsMissingException();
-
-        String posterSize = getPosterSize(desiredPosterSize);
-
-        return getImagesUrl(Uri.parse(baseUrl), posterSize);
-    }
-
-    private Uri getImagesUrl(Uri baseUrl, String posterSize) {
-        return baseUrl.buildUpon().appendPath(posterSize).build();
-    }
-
-    private String getPosterSize(String desiredPosterSize) throws RequirementsMissingException {
-        List<String> imagesPosterSizes = sharedPreferencesUtils.getImagesPosterSizes();
-        if (imagesPosterSizes == null) throw new RequirementsMissingException();
-
-        if (desiredPosterSize == null) {
-            Log.w(TAG, "No poster size selected, building URL with worst quality"); // TODO: Create a const with the message
-            return imagesPosterSizes.get(0);
-        }
-
-        String prefix = desiredPosterSize.substring(0, 1);
-        int size = Integer.parseInt(desiredPosterSize.substring(1));
-
-        String posterSize = null;
-
-        boolean prefixFound = false;
-        boolean adequateSizeFound = false;
-        for (String ips : imagesPosterSizes) {
-            posterSize = ips;
-            if (ips.startsWith(prefix)) {
-                prefixFound = true;
-                if (size <= Integer.parseInt(ips.substring(1))) {
-                    adequateSizeFound = true;
-                    break;
-                }
-            }
-        }
-        if (!prefixFound)
-            Log.w(TAG, "No image size with width as dimension was found, defaulting to \"" + posterSize + "\"."); // TODO: Create a const with the message
-        else if (!adequateSizeFound)
-            Log.i(TAG, "No image size with appropriate size was found, defaulting to \"" + posterSize + "\"."); // TODO: Create a const with the message
-
-        return posterSize;
+    public LiveData<ImageUrlGenerator> getImageUrlGenerator() {
+        return imageUrlGenerator;
     }
 }

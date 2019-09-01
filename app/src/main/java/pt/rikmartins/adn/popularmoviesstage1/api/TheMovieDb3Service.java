@@ -13,6 +13,8 @@ public class TheMovieDb3Service {
     private final TheMovieDatabaseApi3 theMovieDatabaseApi3;
     private final String theMovieDbApiV3Key;
 
+    public final int startPage = TheMovieDatabaseApi3.THE_MOVIE_DB_API_START_PAGE;
+
     @Inject
     public TheMovieDb3Service(TheMovieDatabaseApi3 theMovieDatabaseApi3, @Named(ApiModule.THE_MOVIE_DB_API_KEY_NAME) String theMovieDbApiV3Key) {
         this.theMovieDatabaseApi3 = theMovieDatabaseApi3;

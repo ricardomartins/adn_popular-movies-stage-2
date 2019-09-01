@@ -1,11 +1,7 @@
 package pt.rikmartins.adn.popularmoviesstage1.ui.main;
 
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.net.Uri;
 import android.os.Bundle;
-import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -19,29 +15,24 @@ import androidx.paging.PagedList;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import javax.inject.Inject;
+
+import pt.rikmartins.adn.popularmoviesstage1.AppComponent;
 import pt.rikmartins.adn.popularmoviesstage1.R;
 import pt.rikmartins.adn.popularmoviesstage1.api.model.MovieListItem;
+import pt.rikmartins.adn.popularmoviesstage1.data.ImageUrlGenerator;
 import pt.rikmartins.adn.popularmoviesstage1.data.Repository;
-import pt.rikmartins.adn.popularmoviesstage1.data.SharedPreferencesUtils;
 import pt.rikmartins.adn.popularmoviesstage1.ui.detail.DetailsActivity;
 
 public class MainActivity extends AppCompatActivity implements MovieAdapter.MovieAdapterOnClickHandler {
-    private static final String TAG = MainActivity.class.getSimpleName();
 
     private TextView placeholderTextView;
     private RecyclerView movieListRecyclerView;
     private ProgressBar progressBar;
 
-    private int columnQuant;
+    @Inject MovieAdapter adapter;
 
-    private String desiredPosterSize;
-
-    private MovieAdapter adapter;
-
-    private MainViewModel viewModel; // TODO: Find a way to inject this through Dagger as well
-    // https://medium.com/chili-labs/android-viewmodel-injection-with-dagger-f0061d3402ff
-    // is a very complex example, but may be the only way or in the
-    // very least it may contain clues to a simpler/better solution
+    private MainViewModel viewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,18 +40,18 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
         setContentView(R.layout.activity_main);
 
         // Injection
+        ((AppComponent.ComponentProvider) getApplication()).getComponent().inject(this);
         viewModel = ViewModelProviders.of(this).get(MainViewModel.class);
 
         movieListRecyclerView = findViewById(R.id.rv_movie_list);
         progressBar = findViewById(R.id.pb_movie_list);
         placeholderTextView = findViewById(R.id.tv_placeholder);
 
-        columnQuant = getResources().getInteger(R.integer.column_quantity);
-
-        adapter = new MovieAdapter(this);
-        final GridLayoutManager layoutManager = new GridLayoutManager(this, columnQuant);
-
+        adapter.setMovieAdapterOnClickHandler(this);
         movieListRecyclerView.setAdapter(adapter);
+
+        final int columnQuant = getResources().getInteger(R.integer.column_quantity);
+        final GridLayoutManager layoutManager = new GridLayoutManager(this, columnQuant);
         movieListRecyclerView.setLayoutManager(layoutManager);
 
         viewModel.getMovieListLiveData().observe(this, new Observer<PagedList<MovieListItem>>() {
@@ -78,43 +69,12 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
             }
         });
 
-        sharedPreferencesUtils.getSharedPreferences().registerOnSharedPreferenceChangeListener(new SharedPreferences.OnSharedPreferenceChangeListener() {
+        viewModel.getImageUrlGenerator().observe(this, new Observer<ImageUrlGenerator>() {
             @Override
-            public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-                switch (key) {
-                    case SharedPreferencesUtils.SP_CONFIGURATION_IMAGES_BASE_URL_KEY:
-                    case SharedPreferencesUtils.SP_CONFIGURATION_IMAGES_SECURE_BASE_URL_KEY:
-                    case SharedPreferencesUtils.SP_CONFIGURATION_IMAGES_POSTER_SIZES_KEY:
-                        try {
-                            adapter.setImagesUrl(viewModel.getImagesUrl(desiredPosterSize));
-                        } catch (Repository.RequirementsMissingException rme) {
-                            viewModel.updateConfiguration();
-                        }
-                }
+            public void onChanged(ImageUrlGenerator imageUrlGenerator) {
+                adapter.setImageUrlGenerator(imageUrlGenerator);
             }
         });
-    }
-
-    @Override
-    public void onWindowFocusChanged(boolean hasFocus) {
-        super.onWindowFocusChanged(hasFocus);
-        if (hasFocus) {
-            DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
-            setPosterSizeByWidth((int) ((float) movieListRecyclerView.getWidth() / (float) columnQuant / displayMetrics.density));
-            try {
-                adapter.setImagesUrl(viewModel.getImagesUrl(desiredPosterSize));
-            } catch (Repository.RequirementsMissingException rme) {
-                viewModel.updateConfiguration();
-            }
-        }
-    }
-
-    private void setPosterSizeByWidth(int width) {
-        desiredPosterSize = "w" + width; // TODO: Create a const with the message
-    }
-
-    private void setPosterSizeByHeight(int height) {
-        desiredPosterSize = "h" + height; // TODO: Create a const with the message
     }
 
     @Override
@@ -140,15 +100,23 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        boolean modeSwapped = false;
+
         switch (item.getItemId()) {
             case R.id.order_by_popular:
                 viewModel.switchMode(Repository.POPULAR_MODE);
-                return true;
+                modeSwapped = true;
+                break;
             case R.id.order_by_rate:
                 viewModel.switchMode(Repository.TOP_RATED_MODE);
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
+                modeSwapped = true;
+                break;
+        }
+        if (modeSwapped) {
+            movieListRecyclerView.scrollToPosition(0);
+            return true;
+        } else {
+            return super.onOptionsItemSelected(item);
         }
     }
 

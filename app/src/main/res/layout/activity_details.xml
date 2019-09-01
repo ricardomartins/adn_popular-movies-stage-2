@@ -25,7 +25,7 @@
                 android:id="@+id/titleLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="title"
+                android:text="@string/details_title"
                 android:textAppearance="@style/TextAppearance.AppCompat.Small"
                 app:layout_constraintBaseline_toBaselineOf="@id/title"
                 app:layout_constraintEnd_toStartOf="@id/labelBarrier"
@@ -36,7 +36,7 @@
                 android:id="@+id/releaseDateLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="release date"
+                android:text="@string/details_release_date"
                 android:textAppearance="@style/TextAppearance.AppCompat.Small"
                 app:layout_constraintBaseline_toBaselineOf="@id/releaseDate"
                 app:layout_constraintEnd_toStartOf="@id/labelBarrier"
@@ -47,7 +47,7 @@
                 android:id="@+id/voteAverageLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="vote average"
+                android:text="@string/details_vote_average"
                 android:textAppearance="@style/TextAppearance.AppCompat.Small"
                 app:layout_constraintBaseline_toBaselineOf="@id/voteAverage"
                 app:layout_constraintEnd_toStartOf="@id/labelBarrier"
@@ -58,7 +58,7 @@
                 android:id="@+id/plotSynopsisLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="plot synopsis"
+                android:text="@string/details_plot_synopsis"
                 android:textAppearance="@style/TextAppearance.AppCompat.Small"
                 app:layout_constraintBaseline_toBaselineOf="@id/plotSynopsis"
                 app:layout_constraintEnd_toStartOf="@id/labelBarrier"
@@ -115,7 +115,6 @@
                 android:layout_height="@dimen/details_movie_poster_height"
                 app:layout_constraintTop_toTopOf="parent"
                 android:scaleType="fitCenter"
-                android:visibility="gone"
                 tools:src="@mipmap/ic_launcher"/>
 
             <TextView

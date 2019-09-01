@@ -9,6 +9,8 @@ import retrofit2.http.Path;
 import retrofit2.http.Query;
 
 public interface TheMovieDatabaseApi3 {
+    int THE_MOVIE_DB_API_START_PAGE = 1;
+
     @GET("movie/popular")
     Call<MoviePage> getPopularMovies(@Query("api_key") String apiKey,
                                      @Query("language") String language,

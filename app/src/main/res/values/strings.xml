@@ -3,4 +3,8 @@
 
     <string name="main_order_by_popular">Order by most popular</string>
     <string name="main_order_by_rate">Order by highest rated</string>
+    <string name="details_title">title</string>
+    <string name="details_release_date">release date</string>
+    <string name="details_vote_average">vote average</string>
+    <string name="details_plot_synopsis">plot synopsis</string>
 </resources>
