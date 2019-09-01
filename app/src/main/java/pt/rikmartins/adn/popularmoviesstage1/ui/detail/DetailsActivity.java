@@ -23,11 +23,11 @@ import pt.rikmartins.adn.popularmoviesstage1.databinding.ActivityDetailsBinding;
 
 public class DetailsActivity extends AppCompatActivity {
 
-    public static final String ARG_MOVIE_ID = "MOVIE_ID";
+    public static final String ARG_MOVIE = "MOVIE";
 
-    public static Bundle buildBundle(int movieId) {
+    public static Bundle buildBundle(MovieListItem movieListItem) {
         final Bundle bundle = new Bundle(1);
-        bundle.putInt(ARG_MOVIE_ID, movieId);
+        bundle.putParcelable(ARG_MOVIE, movieListItem);
         return bundle;
     }
 
@@ -51,8 +51,8 @@ public class DetailsActivity extends AppCompatActivity {
 
         final Bundle bundle = getIntent().getExtras();
         if (bundle != null) {
-            final int movieId = bundle.getInt(ARG_MOVIE_ID);
-            viewModel.setMovieId(movieId);
+            final MovieListItem movie = bundle.getParcelable(ARG_MOVIE);
+            viewModel.setMovie(movie);
         }
 
         binding.setLifecycleOwner(this);
@@ -64,7 +64,7 @@ public class DetailsActivity extends AppCompatActivity {
             }
         });
 
-        new ImageUlrLiveData(desiredPosterWidth, viewModel.movie, viewModel.getImageUrlGenerator()).observe(this, new Observer<Uri>() {
+        new ImageUlrLiveData(viewModel.getMovie(), desiredPosterWidth, viewModel.getImageUrlGenerator()).observe(this, new Observer<Uri>() {
             @Override
             public void onChanged(Uri uri) {
                 picasso.load(uri).into(binding.moviePoster);
@@ -85,11 +85,13 @@ public class DetailsActivity extends AppCompatActivity {
     }
 
     private static class ImageUlrLiveData extends MediatorLiveData<Uri> {
+        private MovieListItem movie;
         private Integer lastDesiredPosterWidth;
-        private MovieListItem lastMovieListItem;
         private ImageUrlGenerator lastImageUrlGenerator;
 
-        private ImageUlrLiveData(MutableLiveData<Integer> desiredPosterWidth, LiveData<MovieListItem> movieListItem, LiveData<ImageUrlGenerator> imageUrlGenerator) {
+        private ImageUlrLiveData(MovieListItem movie, MutableLiveData<Integer> desiredPosterWidth, LiveData<ImageUrlGenerator> imageUrlGenerator) {
+            this.movie = movie;
+
             addSource(desiredPosterWidth, new Observer<Integer>() {
                 @Override
                 public void onChanged(Integer integer) {
@@ -98,13 +100,6 @@ public class DetailsActivity extends AppCompatActivity {
                         lastImageUrlGenerator.setPosterSizeByWidth(lastDesiredPosterWidth);
                         trigger();
                     }
-                }
-            });
-            addSource(movieListItem, new Observer<MovieListItem>() {
-                @Override
-                public void onChanged(MovieListItem movieListItem) {
-                    lastMovieListItem = movieListItem;
-                    trigger();
                 }
             });
             addSource(imageUrlGenerator, new Observer<ImageUrlGenerator>() {
@@ -117,9 +112,9 @@ public class DetailsActivity extends AppCompatActivity {
         }
 
         private void trigger() {
-            if (lastMovieListItem == null || lastImageUrlGenerator == null) return;
+            if (lastImageUrlGenerator == null) return;
 
-            final String posterPath = lastMovieListItem.getPosterPath();
+            final String posterPath = movie.getPosterPath();
             final Uri imageUrl = lastImageUrlGenerator.getImageUrl(posterPath);
             setValue(imageUrl);
         }

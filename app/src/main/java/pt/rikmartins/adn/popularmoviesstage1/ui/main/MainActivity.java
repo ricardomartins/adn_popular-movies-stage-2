@@ -147,7 +147,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
     public void onClick(MovieListItem movieListItem) {
         final Intent intent = new Intent(this, DetailsActivity.class);
 
-        final Bundle bundle = DetailsActivity.buildBundle(movieListItem.getId());
+        final Bundle bundle = DetailsActivity.buildBundle(movieListItem);
         intent.putExtras(bundle);
 
         startActivity(intent);

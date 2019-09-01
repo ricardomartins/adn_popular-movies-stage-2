@@ -1,13 +1,19 @@
 package pt.rikmartins.adn.popularmoviesstage1.api.model;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
+import androidx.annotation.Nullable;
+
 import com.google.gson.annotations.SerializedName;
 
 import java.util.List;
 
-public class MovieListItem { // referred to in the API docs as {Movie List Result Object}
+public class MovieListItem implements Parcelable { // referred to in the API docs as {Movie List Result Object}
 
     @SerializedName("poster_path")
-    private String posterPath; // can be null
+    @Nullable
+    private String posterPath;
 
     private Boolean adult;
 
@@ -30,7 +36,8 @@ public class MovieListItem { // referred to in the API docs as {Movie List Resul
     private String title;
 
     @SerializedName("backdrop_path")
-    private String backdropPath; // can be null
+    @Nullable
+    private String backdropPath;
 
     private Float popularity;
 
@@ -42,6 +49,53 @@ public class MovieListItem { // referred to in the API docs as {Movie List Resul
     @SerializedName("vote_average")
     private Float voteAverage;
 
+    protected MovieListItem(Parcel in) {
+        posterPath = in.readString();
+        byte tmpAdult = in.readByte();
+        adult = tmpAdult == 0 ? null : tmpAdult == 1;
+        overview = in.readString();
+        releaseDate = in.readString();
+        if (in.readByte() == 0) {
+            id = null;
+        } else {
+            id = in.readInt();
+        }
+        originalTitle = in.readString();
+        originalLanguage = in.readString();
+        title = in.readString();
+        backdropPath = in.readString();
+        if (in.readByte() == 0) {
+            popularity = null;
+        } else {
+            popularity = in.readFloat();
+        }
+        if (in.readByte() == 0) {
+            voteCount = null;
+        } else {
+            voteCount = in.readInt();
+        }
+        byte tmpVideo = in.readByte();
+        video = tmpVideo == 0 ? null : tmpVideo == 1;
+        if (in.readByte() == 0) {
+            voteAverage = null;
+        } else {
+            voteAverage = in.readFloat();
+        }
+    }
+
+    public static final Creator<MovieListItem> CREATOR = new Creator<MovieListItem>() {
+        @Override
+        public MovieListItem createFromParcel(Parcel in) {
+            return new MovieListItem(in);
+        }
+
+        @Override
+        public MovieListItem[] newArray(int size) {
+            return new MovieListItem[size];
+        }
+    };
+
+    @Nullable
     public String getPosterPath() {
         return posterPath;
     }
@@ -78,6 +132,7 @@ public class MovieListItem { // referred to in the API docs as {Movie List Resul
         return title;
     }
 
+    @Nullable
     public String getBackdropPath() {
         return backdropPath;
     }
@@ -96,5 +151,47 @@ public class MovieListItem { // referred to in the API docs as {Movie List Resul
 
     public Float getVoteAverage() {
         return voteAverage;
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel parcel, int i) {
+        parcel.writeString(posterPath);
+        parcel.writeByte((byte) (adult == null ? 0 : adult ? 1 : 2));
+        parcel.writeString(overview);
+        parcel.writeString(releaseDate);
+        if (id == null) {
+            parcel.writeByte((byte) 0);
+        } else {
+            parcel.writeByte((byte) 1);
+            parcel.writeInt(id);
+        }
+        parcel.writeString(originalTitle);
+        parcel.writeString(originalLanguage);
+        parcel.writeString(title);
+        parcel.writeString(backdropPath);
+        if (popularity == null) {
+            parcel.writeByte((byte) 0);
+        } else {
+            parcel.writeByte((byte) 1);
+            parcel.writeFloat(popularity);
+        }
+        if (voteCount == null) {
+            parcel.writeByte((byte) 0);
+        } else {
+            parcel.writeByte((byte) 1);
+            parcel.writeInt(voteCount);
+        }
+        parcel.writeByte((byte) (video == null ? 0 : video ? 1 : 2));
+        if (voteAverage == null) {
+            parcel.writeByte((byte) 0);
+        } else {
+            parcel.writeByte((byte) 1);
+            parcel.writeFloat(voteAverage);
+        }
     }
 }
