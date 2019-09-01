@@ -7,4 +7,5 @@
     <string name="details_release_date">release date</string>
     <string name="details_vote_average">vote average</string>
     <string name="details_plot_synopsis">plot synopsis</string>
+    <string name="main_placeholder">Hello! There should be an awesome list of movies here, but until it arrives, you\'re stuck with me :)</string>
 </resources>

@@ -57,7 +57,15 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
         viewModel.getMovieListLiveData().observe(this, new Observer<PagedList<MovieListItem>>() {
             @Override
             public void onChanged(PagedList<MovieListItem> movieListItems) {
-                adapter.submitList(movieListItems);
+                if (movieListItems == null || movieListItems.isEmpty()) showPlaceholder();
+                else showList();
+
+                adapter.submitList(movieListItems, new Runnable() {
+                    @Override
+                    public void run() {
+                        movieListRecyclerView.scrollToPosition(0);
+                    }
+                });
             }
         });
 
@@ -112,12 +120,9 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
                 modeSwapped = true;
                 break;
         }
-        if (modeSwapped) {
-            movieListRecyclerView.scrollToPosition(0);
-            return true;
-        } else {
-            return super.onOptionsItemSelected(item);
-        }
+
+        if (modeSwapped) return true;
+        else return super.onOptionsItemSelected(item);
     }
 
     private void showList() {

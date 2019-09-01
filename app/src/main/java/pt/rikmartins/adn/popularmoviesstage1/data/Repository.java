@@ -124,17 +124,20 @@ public class Repository {
         }
 
         private MoviePage request(Integer page) throws IOException {
-            workStatusLiveData.postValue(true);
-            Log.i(TAG, "Retrieving page " + page);
-            final Call<MoviePage> moviesPageCall = getModeUnboxed() == TOP_RATED_MODE
-                    ? theMovieDb3Service.getTopRatedMovies(page)
-                    : theMovieDb3Service.getPopularMovies(page);
+            try {
+                workStatusLiveData.postValue(true);
+                Log.i(TAG, "Retrieving page " + page);
+                final Call<MoviePage> moviesPageCall = getModeUnboxed() == TOP_RATED_MODE
+                        ? theMovieDb3Service.getTopRatedMovies(page)
+                        : theMovieDb3Service.getPopularMovies(page);
 
-            final Response<MoviePage> response = moviesPageCall.execute();
-            workStatusLiveData.postValue(false);
-            if (response.isSuccessful()) return response.body();
+                final Response<MoviePage> response = moviesPageCall.execute();
+                if (response.isSuccessful()) return response.body();
 
-            return null;
+                return null;
+            } finally {
+                workStatusLiveData.postValue(false);
+            }
         }
     }
 
