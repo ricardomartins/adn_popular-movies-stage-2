@@ -1,6 +1,5 @@
 package pt.rikmartins.adn.popularmoviesstage2.data;
 
-import androidx.arch.core.util.Function;
 import androidx.lifecycle.LiveData;
 import androidx.paging.DataSource;
 import androidx.paging.LivePagedListBuilder;
@@ -26,12 +25,7 @@ class FavoriteServiceImpl implements FavoriteService {
     @Override
     public LiveData<PagedList<MovieInfo>> getAll() {
         final DataSource.Factory<Integer, MovieInfo> mappedDataSourceFactory =
-                favoriteDao.getAll().map(new Function<Favorite, MovieInfo>() {
-                    @Override
-                    public MovieInfo apply(Favorite input) {
-                        return input;
-                    }
-                });
+                favoriteDao.getAll().map(input -> input);
 
         return new LivePagedListBuilder<>(mappedDataSourceFactory, 50).build();
     }

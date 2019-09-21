@@ -23,12 +23,12 @@ public class WatchCaseExposerImpl implements WatchCaseExposer {
     public final <Request, Response> LiveData<Response> expose(
             @NonNull WatchCase<Request, Response> watchCase,
             @Nullable Request request) {
-        return expose(watchCase, request, Utils.<Request>forward(), Utils.<Response>forward());
+        return expose(watchCase, request, Utils.forward(), Utils.forward());
     }
 
     @Override
     public final <Response> LiveData<Response> expose(
             @NonNull WatchCase<Void, Response> watchCase) {
-        return expose(watchCase, null, Utils.<Void>forward(), Utils.<Response>forward());
+        return expose(watchCase, null, Utils.forward(), Utils.forward());
     }
 }

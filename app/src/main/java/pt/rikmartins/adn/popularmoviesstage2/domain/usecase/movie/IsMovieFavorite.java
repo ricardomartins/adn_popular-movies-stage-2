@@ -1,6 +1,5 @@
 package pt.rikmartins.adn.popularmoviesstage2.domain.usecase.movie;
 
-import androidx.arch.core.util.Function;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.Transformations;
 
@@ -23,11 +22,6 @@ public class IsMovieFavorite implements WatchCase<MovieInfo, Boolean> {
 
     @Override
     public LiveData<Boolean> expose(MovieInfo movieInfo) {
-        return Transformations.map(movieRepository.getFavorite(movieInfo), new Function<MovieInfo, Boolean>() {
-            @Override
-            public Boolean apply(MovieInfo input) {
-                return input != null;
-            }
-        });
+        return Transformations.map(movieRepository.getFavorite(movieInfo), input -> input != null);
     }
 }

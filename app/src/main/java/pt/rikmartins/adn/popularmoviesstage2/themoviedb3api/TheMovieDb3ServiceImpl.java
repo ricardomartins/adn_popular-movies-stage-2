@@ -18,8 +18,8 @@ import javax.inject.Singleton;
 import pt.rikmartins.adn.popularmoviesstage2.domain.model.MovieInfo;
 import pt.rikmartins.adn.popularmoviesstage2.domain.model.Review;
 import pt.rikmartins.adn.popularmoviesstage2.domain.model.Video;
-import pt.rikmartins.adn.popularmoviesstage2.themoviedb3.service.TheMovieDb3Service;
 import pt.rikmartins.adn.popularmoviesstage2.themoviedb3.model.ImagesConfiguration;
+import pt.rikmartins.adn.popularmoviesstage2.themoviedb3.service.TheMovieDb3Service;
 import pt.rikmartins.adn.popularmoviesstage2.themoviedb3api.model.Configuration;
 import pt.rikmartins.adn.popularmoviesstage2.themoviedb3api.model.MovieListItem;
 import pt.rikmartins.adn.popularmoviesstage2.themoviedb3api.model.MoviePage;
@@ -77,7 +77,7 @@ public class TheMovieDb3ServiceImpl implements TheMovieDb3Service {
             final VideoResults videoResults = response.body();
             if (videoResults != null) {
                 final List<VideoImpl> videos = videoResults.getResults();
-                if (videos != null) return new ArrayList<Video>(videos);
+                if (videos != null) return new ArrayList<>(videos);
             }
         } catch (IOException e) {
             e.printStackTrace();

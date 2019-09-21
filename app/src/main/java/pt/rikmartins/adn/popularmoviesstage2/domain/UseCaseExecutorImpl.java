@@ -21,7 +21,7 @@ public class UseCaseExecutorImpl implements UseCaseExecutor {
     public final <Request, Response> Response execute(
             @NonNull UseCase<Request, Response> useCase,
             @Nullable Request request) {
-        return execute(useCase, request, Utils.<Request>forward(), Utils.<Response>forward());
+        return execute(useCase, request, Utils.forward(), Utils.forward());
     }
 
     @Override
@@ -29,12 +29,12 @@ public class UseCaseExecutorImpl implements UseCaseExecutor {
             @NonNull UseCase<Request, Void> useCase,
             @Nullable RequestDto requestDto,
             @NonNull Function<RequestDto, Request> requestConverter) {
-        execute(useCase, requestDto, requestConverter, Utils.<Void>forward());
+        execute(useCase, requestDto, requestConverter, Utils.forward());
     }
 
     @Override
     public final <Response> Response execute(
             @NonNull UseCase<Void, Response> useCase) {
-        return execute(useCase, null, Utils.<Void>forward(), Utils.<Response>forward());
+        return execute(useCase, null, Utils.forward(), Utils.forward());
     }
 }

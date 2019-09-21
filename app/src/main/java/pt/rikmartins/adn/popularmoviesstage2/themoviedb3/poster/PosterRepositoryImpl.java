@@ -21,9 +21,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import io.reactivex.Single;
-import io.reactivex.SingleEmitter;
 import io.reactivex.SingleOnSubscribe;
-import io.reactivex.functions.Consumer;
 import io.reactivex.schedulers.Schedulers;
 import pt.rikmartins.adn.popularmoviesstage2.domain.gateway.PosterRepository;
 import pt.rikmartins.adn.popularmoviesstage2.themoviedb3.model.ImagesConfiguration;
@@ -73,7 +71,7 @@ public class PosterRepositoryImpl implements PosterRepository, PosterManager {
 
     private List<String> getImagesPosterSizes() {
         String posterSizesString = sharedPreferences.getString(SP_CONFIGURATION_IMAGES_POSTER_SIZES_KEY, null);
-        return posterSizesString != null ? gson.<List<String>>fromJson(posterSizesString, new TypeToken<List<String>>() {
+        return posterSizesString != null ? gson.fromJson(posterSizesString, new TypeToken<List<String>>() {
         }.getType()) : null;
     }
 
@@ -84,12 +82,9 @@ public class PosterRepositoryImpl implements PosterRepository, PosterManager {
 
             if (getImagesSecureBaseUrl() != null) postImageUrlGenerator();
 
-            sharedPreferences.registerOnSharedPreferenceChangeListener(new SharedPreferences.OnSharedPreferenceChangeListener() {
-                @Override
-                public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-                    if (SP_CONFIGURATION_IMAGES_SECURE_BASE_URL_KEY.equals(key))
-                        PosterRepositoryImpl.this.postImageUrlGenerator();
-                }
+            sharedPreferences.registerOnSharedPreferenceChangeListener((sharedPreferences, key) -> {
+                if (SP_CONFIGURATION_IMAGES_SECURE_BASE_URL_KEY.equals(key))
+                    PosterRepositoryImpl.this.postImageUrlGenerator();
             });
         }
         return posterUrlReadyStatus;
@@ -172,18 +167,10 @@ public class PosterRepositoryImpl implements PosterRepository, PosterManager {
 
     private void updatePosterConfigurationEvery(Long repeatInterval, TimeUnit repeatIntervalTimeUnit) {
         if ((getImagesBaseUrl() == null && getImagesSecureBaseUrl() == null) || getImagesPosterSizes() == null) {
-            Single.create(new SingleOnSubscribe<ImagesConfiguration>() {
-                @Override
-                public void subscribe(SingleEmitter<ImagesConfiguration> emitter) throws Exception {
-                    final ImagesConfiguration imagesConfiguration = downloadPosterConfiguration();
-                    emitter.onSuccess(imagesConfiguration);
-                }
-            }).doOnSuccess(new Consumer<ImagesConfiguration>() {
-                @Override
-                public void accept(ImagesConfiguration imagesConfiguration) throws Exception {
-                    setPosterConfiguration(imagesConfiguration);
-                }
-            }).subscribeOn(Schedulers.io()).subscribe();
+            Single.create((SingleOnSubscribe<ImagesConfiguration>) emitter -> {
+                final ImagesConfiguration imagesConfiguration = downloadPosterConfiguration();
+                emitter.onSuccess(imagesConfiguration);
+            }).doOnSuccess(this::setPosterConfiguration).subscribeOn(Schedulers.io()).subscribe();
 
             final PeriodicWorkRequest periodicRequest =
                     new PeriodicWorkRequest.Builder(PosterConfigurationUpdateWorker.class, repeatInterval, repeatIntervalTimeUnit)
