@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+        <import type="android.view.View"/>
+
+        <variable
+            name="viewModel"
+            type="pt.rikmartins.adn.popularmoviesstage2.ui.review.ReviewsViewModel" />
+    </data>
+
+
+    <merge
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".ui.review.ReviewsActivity">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/reviewList"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            tools:itemCount="5"
+            tools:listitem="@layout/main_movie_item"
+            android:visibility="@{viewModel.movieReviews != null &amp;&amp; !viewModel.movieReviews.empty ? View.VISIBLE : View.GONE}"/>
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/default_margin"
+            android:visibility="invisible"
+            android:layout_gravity="center_horizontal" />
+
+        <TextView
+            android:id="@+id/emptyPlaceholder"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:text="@string/reviews_empty_placeholder"
+            android:visibility="@{viewModel.movieReviews != null &amp;&amp; !viewModel.movieReviews.empty ? View.GONE : View.VISIBLE}"/>
+    </merge>
+</layout>

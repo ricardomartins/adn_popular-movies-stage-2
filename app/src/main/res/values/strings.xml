@@ -1,11 +1,16 @@
 <resources>
-    <string name="app_name">Popular Movies: Stage 1</string>
+    <string name="app_name">Popular Movies: Stage 2</string>
 
     <string name="main_order_by_popular">Order by most popular</string>
     <string name="main_order_by_rate">Order by highest rated</string>
+    <string name="main_show_favorite">Show favorite</string>
+    <string name="main_placeholder">Hello! There should be an awesome list of movies here, but until it arrives, you\'re stuck with me :)</string>
     <string name="details_title">title</string>
     <string name="details_release_date">release date</string>
     <string name="details_vote_average">vote average</string>
     <string name="details_plot_synopsis">plot synopsis</string>
-    <string name="main_placeholder">Hello! There should be an awesome list of movies here, but until it arrives, you\'re stuck with me :)</string>
+    <string name="details_videos">videos</string>
+    <string name="details_read_the_reviews">Read the reviews…</string>
+    <string name="reviews_empty_placeholder">It appears there\'s no available reviews for this movie.</string>
+    <string name="reviews_author">review by %s</string>
 </resources>
